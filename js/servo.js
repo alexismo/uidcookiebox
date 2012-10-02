@@ -31,7 +31,9 @@ var feedingInitiated = false;
 $(document).ready(function() {
 	// Listen for the IOBoard READY event which indicates the IOBoard
 	// is ready to send and receive data
-	arduino.addEventListener(IOBoardEvent.READY, onReady);
+	if(arduino.isReady){
+		arduino.addEventListener(IOBoardEvent.READY, onReady);
+	}
 });
 
 function onReady(event) {
@@ -132,7 +134,7 @@ function onServoDone(){
 
 //change servo angle (0-180...45-90): servo.angle
 function feedUser(user){
-	console.log('feeding user '+user);
+	console.log('feeding user '+user.from_user);
 	feedingInitiated = true;
 	servo.angle = 90;//initiate the feeding
 }

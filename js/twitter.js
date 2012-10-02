@@ -2,80 +2,109 @@ var users = [];
 var fed_users = [];
 var minFeedTime = 25;//in minutes
 
-var hashtag = "uidcookiebox";
-
 var arduinoIsReady = false;
 
-var interval = 5000;
-
-function checkForFedUsers(feed){
-    var dNow = new Date();
-    var foundUsers = [];//only record the latest tweet for each user
-    $.each(feed, function(i, val){
-        var dAtTweet = new Date(val.created_at);
-        var timeDiffInMinutes = Math.round(dateDiff(dNow, dAtTweet)/1000/60);//in minutes
-        var indexOfFed = fed_users.indexOf(val.from_user);
-
-        if(foundUsers.indexOf(val.from_user) == -1){//only take the latest tweet from a user
-            foundUsers.push(val.from_user);
-
-            if(timeDiffInMinutes < minFeedTime){
-                if(indexOfFed  == -1){//if the user isn't found
-                    //FEED USER HERE
-                    if(arduinoIsReady && !feedingInitiated){
-                        fed_users.push(val.from_user);
-                        feedUser(val.from_user);
-                    }
-                }else{
-                    //white.off();
-                    //red.blink(2000, 1, BO.generators.Oscillator.SIN);//user is already fed
-                    console.log("user " + val.from_user + " already fed");
-                }
-            }else{
-                if(indexOfFed > -1){
-                    console.log('found user '+val.from_user+' at '+indexOfFed);
-                    //you can feed this user again, remove him from the array
-                    fed_users.splice(indexOfFed, indexOfFed+1);
-                }
+var log = function(){
+    var w = window;
+    return {
+        add: function(m) { w.console && w.console.log(m) },
+        js: function() { w.console && w.console.profile() },  
+        jsEnd: function() { w.console && w.console.profileEnd() },
+        prof: function(code) {
+            if ( w.console ) {
+                console.profile();
+                try { code() } catch(err) { };
+                console.profileEnd();
             }
         }
-    });
-    if(!feedingInitiated){
-        setTimeout(function(){getTweetsForTag(hashtag)}, interval);
     }
+}();
+
+function checkForFedUsers(user){
+    if(is_user_in_fed(user)){
+        console.log(user.from_user+' has been fed already');
+        return;
+    }else{
+        user.created_at = new Date();
+        fed_users.push(user);
+        //feedUser(user);
+    }
+}
+
+function is_user_in_fed(user){
+    for(var x = 0; x<fed_users.length;x++){
+        console.log(fed_users[x].from_user, user.from_user);
+
+        if(fed_users[x].from_user == user.from_user){
+            
+            var minutesSince = dateDiff(new Date(), fed_users[x].created_at);
+            console.log(minutesSince);
+
+            if(minutesSince < 5){
+                console.log('we have already fed this person');
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 function dateDiff(date1,date2) {//returns the time diff in milliseconds
-    return date1.getTime() - date2.getTime();
+    return Math.round((date1.getTime() - date2.getTime())/1000/60);
 }
 
-function getTweetsForTag(tag){
-    var url = "http://search.twitter.com/search.json?q=%23"+tag;
-    console.log('getting tweets');
-    $.ajax(url,{
-        type: "GET",
-        dataType:"jsonp",
-        success:twSuccess
+var stream = function(){
+    var source = new EventSource('stream');
+
+    source.addEventListener('twitter', function(e) {
+        var data = JSON.parse(e.data),
+                htm = [];
+        htm.push( '<li class="twitter" style="display: none;">' );
+        htm.push( '<div class="profile">' );
+            htm.push( '<img src="'+data.user.profile_image_url+'" />' );
+            htm.push( '<a href="#">'+ data.user.screen_name + '</a>' );
+        htm.push( '</div>' );
+        htm.push( '<div class="text">'+data.text+'</div>' );
+        htm.push( '</li>' );
+
+        var user = {};
+        user.from_user = data.user.screen_name;
+        user.created_at = new Date(data.created_at);
+
+        checkForFedUsers(user);
+
+        $("#results").prepend( htm.join("") );
+        $("#results li:first-child").fadeIn();
+        log.add(data);
+    }, false);
+
+    source.addEventListener('keepalive', function(e){
+        console.log("keepalive received");
+    });
+
+    source.addEventListener('open', function(e) {
+        log.add("opened");
+    }, false);
+
+    source.addEventListener('error', function(e) {
+        log.add(e);
+        if (e.eventPhase == EventSource.CLOSED) {
+            log.add("closed");
+        }
+    }, false);
+};
+
+function renderFedUsers(){
+    $('#content').html('');
+        $.each(fed_users, function(i, val){
+            $('#content').append(val.from_user+ " at "+val.created_at +"<br />");
     });
 }
 
-function twSuccess(data, statusTxt, request){
-    if(statusTxt == "success"){
-        if(data.results.length > 0){
-            var user_time = [];
-            $.each(data.results, function(i, val){
-                user_time.push({from_user:val.from_user,created_at:val.created_at});
-            });
-
-            checkForFedUsers(user_time);
-
-            $('#content').html('');
-            $.each(fed_users, function(i, val){
-                $('#content').append(val +"<br />");
-            });
-        }
-    }else{
-        console.log(status);
-        console.log(request);
+$(function(){
+    if (!!window.EventSource) {
+        stream();
+    } else {
+        // Result to xhr polling :(
     }
-}
+});
