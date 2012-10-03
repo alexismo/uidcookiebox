@@ -54,52 +54,18 @@ function onReady(event) {
 	$(servo).bind('Servo.IN', onServoIn);
 	$(servo).bind('Servo.DONE', onServoDone);
 
-	//white = new LED(arduino, arduino.getDigitalPin(5));
-	//red = new LED(arduino, arduino.getDigitalPin(6));
+	red = new LED(arduino, arduino.getDigitalPin(6));
+	green = new LED(arduino, arduino.getDigitalPin(5));
+	blue = new LED(arduino, arduino.getDigitalPin(3));
 
 	arduinoIsReady = true;
+
+	setInterval(function(){//blink LEDs every three seconds
+		red.blink(1000, 3, BO.generators.Oscillator.BREATHERED);
+		green.blink(1000, 3, BO.generators.Oscillator.BREATHEGREEN);
+		blue.blink(1000, 3, BO.generators.Oscillator.BREATHEBLUE);
+    }, 3000);
 }
-
-/*
-function onServoChange(event){
-	// The potentiometer gives back a value between <5 (in) and >18 (out)
-	var valueIn = event.target.value;
-	var value = valueIn * 100;
-	value = value.toFixed(0);
-
-	servoVals.push(value);
-	if(servoVals.length >= servoReadings){
-		servoVals.push(value);
-
-		servoVals.splice(0,servoReadings);
-		var t = 0;
-		$.each(servoVals, function(i, val){
-			t += val;
-		});
-		value = t/servoVals.length;
-
-		//logic bloc for determining approximate progress of the servo
-		if(value < 6){
-			servoIn++;
-			servoOut = 0;
-			if(servoIn >=3){
-				$(servo).trigger('Servo.IN');
-				servo.status = "in";
-				console.log('in');
-			}
-		}
-		if(value > 32){
-			servoOut++;
-			servoIn = 0;
-			if(servoOut > 3){
-				$(servo).trigger('Servo.OUT');
-				servo.status = "out";
-				console.log('out');
-			}
-		}
-	}
-}
-*/
 
 function onServoIn(){
 	console.log('in');
@@ -126,14 +92,25 @@ function onServoDone(){
 //change servo angle (0-180): servo.angle
 function feedUser(user){
 	console.log('feeding user '+user.from_user);
-	//fed_users.push(user);
+	fed_users.push(user);
 	feedingInitiated = true;
 
 	servo.angle = 0;//initiate the feeding, push the cookie 
 
 	setTimeout(function(){$(servo).trigger('Servo.IN');}, 5000 );
 }
-
-BO.generators.Oscillator.BREATHE = function(val, lastVal) {
+/*BO.generators.Oscillator.BREATHE = function(val, lastVal) {
 	return ((-240*Math.abs(Math.sin(val)))+255)/255; //breathe wave
+};*/
+
+BO.generators.Oscillator.BREATHERED = function(val, lastVal) {
+	return (((-240*Math.abs(Math.sin(val)))+255)/255)*0.35; //breathe wave
+};
+
+BO.generators.Oscillator.BREATHEGREEN = function(val, lastVal) {
+	return ((-240*Math.abs(Math.sin(val)))+255)/255; //breathe wave
+};
+
+BO.generators.Oscillator.BREATHEBLUE = function(val, lastVal) {
+	return (((-240*Math.abs(Math.sin(val)))+255)/255)*0.4; //breathe wave
 };

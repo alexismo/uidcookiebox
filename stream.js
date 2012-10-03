@@ -29,8 +29,8 @@ http.createServer(function (req, res) {
 		res.writeHead(200, {'Content-Type': 'text/event-stream'});
 		https.get(options, function(result){
 			result.on('data', function(chunk){
-				if(chunk == '\r\n'){//send a keepalive
-					//console.log("sending keepalive");
+				if(chunk == '\r\n'){//got a keepalive
+					//console.log("got keepalive");
 					res.write("event: keepalive\n");
 				}else{
 					jsonTwitter.feed(chunk);
