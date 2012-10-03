@@ -23,22 +23,21 @@ var arduino = new IOBoard("localhost", 8887);
 
 // Variables
 var servo;
-var white;
+
 var red;
+var green;
+var blue;
+
 var servoIn, servoOut = 0;
 var feedingInitiated = false;
 
 $(document).ready(function() {
 	// Listen for the IOBoard READY event which indicates the IOBoard
 	// is ready to send and receive data
-	if(arduino.isReady){
-		arduino.addEventListener(IOBoardEvent.READY, onReady);
-	}
+	arduino.addEventListener(IOBoardEvent.READY, onReady);
 });
 
 function onReady(event) {
-	//require the Arduino to be ready before any tweets are gotten
-	setTimeout(function(){getTweetsForTag(hashtag)}, interval);
 
 	// Remove the listener because it is no longer needed
 	arduino.removeEventListener(IOBoardEvent.READY, onReady);
@@ -50,26 +49,18 @@ function onReady(event) {
 
 	// Parameters: board, pin
 	servo = new Servo(arduino, arduino.getDigitalPin(9));
-	servo.angle = 45;//45 degrees is retracted, 90 is extended
+	servo.angle = 180;//0 degrees is extended, 180 is retracted. go in, get a cookie
 	$(servo).bind('Servo.OUT', onServoOut);
 	$(servo).bind('Servo.IN', onServoIn);
 	$(servo).bind('Servo.DONE', onServoDone);
 
-	white = new LED(arduino, arduino.getDigitalPin(5));
-	red = new LED(arduino, arduino.getDigitalPin(6));
-
-	// Enable the analog pin so we can read its value
-	arduino.enableAnalogPin(1);
-	var sensor = arduino.getAnalogPin(1);
-	sensor.addEventListener(PinEvent.CHANGE, onServoChange);
+	//white = new LED(arduino, arduino.getDigitalPin(5));
+	//red = new LED(arduino, arduino.getDigitalPin(6));
 
 	arduinoIsReady = true;
-
-	setInterval(function(){//getting tweets every 3 seconds
-        white.blink(interval, 3, BO.generators.Oscillator.BREATHE);
-    }, interval);
 }
 
+/*
 function onServoChange(event){
 	// The potentiometer gives back a value between <5 (in) and >18 (out)
 	var valueIn = event.target.value;
@@ -86,7 +77,6 @@ function onServoChange(event){
 			t += val;
 		});
 		value = t/servoVals.length;
-		//console.log(value);
 
 		//logic bloc for determining approximate progress of the servo
 		if(value < 6){
@@ -109,12 +99,15 @@ function onServoChange(event){
 		}
 	}
 }
+*/
 
 function onServoIn(){
 	console.log('in');
 
 	if(feedingInitiated){
-		$(servo).trigger('Servo.DONE');
+		console.log('extending to complete feeding');
+		servo.angle=180;
+		setTimeout( function(){$(servo).trigger('Servo.OUT');}, 5000 );
 	}
 }
 
@@ -122,21 +115,23 @@ function onServoOut(){
 	console.log('out');
 
 	if(feedingInitiated){
-		console.log('going back to complete feeding');
-		servo.angle=45;
+		$(servo).trigger('Servo.DONE');
 	}
 }
 
 function onServoDone(){
-		feedingInitiated = false;
-		setTimeout(function(){getTweetsForTag(hashtag)}, interval);
+	feedingInitiated = false;
 }
 
-//change servo angle (0-180...45-90): servo.angle
+//change servo angle (0-180): servo.angle
 function feedUser(user){
 	console.log('feeding user '+user.from_user);
+	//fed_users.push(user);
 	feedingInitiated = true;
-	servo.angle = 90;//initiate the feeding
+
+	servo.angle = 0;//initiate the feeding, push the cookie 
+
+	setTimeout(function(){$(servo).trigger('Servo.IN');}, 5000 );
 }
 
 BO.generators.Oscillator.BREATHE = function(val, lastVal) {

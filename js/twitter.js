@@ -26,8 +26,7 @@ function checkForFedUsers(user){
         return;
     }else{
         user.created_at = new Date();
-        fed_users.push(user);
-        //feedUser(user);
+        feedUser(user);
     }
 }
 
@@ -67,11 +66,13 @@ var stream = function(){
         htm.push( '<div class="text">'+data.text+'</div>' );
         htm.push( '</li>' );
 
-        var user = {};
-        user.from_user = data.user.screen_name;
-        user.created_at = new Date(data.created_at);
+        if(arduinoIsReady){
+            var user = {};
+            user.from_user = data.user.screen_name;
+            user.created_at = new Date(data.created_at);
 
-        checkForFedUsers(user);
+            checkForFedUsers(user);
+        }
 
         $("#results").prepend( htm.join("") );
         $("#results li:first-child").fadeIn();
