@@ -5,6 +5,7 @@ var Potentiometer = BO.io.Potentiometer;
 var PotEvent = BO.io.PotEvent;
 
 var LED = BO.io.LED;
+var Pin = BO.io.Pin;
 
 var Pin = BO.Pin;
 var PinEvent = BO.PinEvent;
@@ -23,13 +24,15 @@ var arduino = new IOBoard("localhost", 8887);
 
 // Variables
 var servo;
-
 var red;
 var green;
 var blue;
+var gate;
 
 var servoIn, servoOut = 0;
 var feedingInitiated = false;
+
+var breatheInterval;
 
 $(document).ready(function() {
 	// Listen for the IOBoard READY event which indicates the IOBoard
@@ -42,10 +45,10 @@ function onReady(event) {
 	// Remove the listener because it is no longer needed
 	arduino.removeEventListener(IOBoardEvent.READY, onReady);
 
-	// Analog input example using Potentiometer object
-	// Parameters: board, analogPin, enableSmoothing		
-	arduino.setDigitalPinMode(5, Pin.PWM);
-	arduino.setDigitalPinMode(6, Pin.PWM);
+	//set up the light gate sensor
+	arduino.setDigitalPinMode(4, Pin.DIN);
+	gate = arduino.getDigitalPin(4);
+	gate.addEventListener(PinEvent.CHANGE, onLightGateChange);
 
 	// Parameters: board, pin
 	servo = new Servo(arduino, arduino.getDigitalPin(9));
@@ -60,7 +63,7 @@ function onReady(event) {
 
 	arduinoIsReady = true;
 
-	setInterval(function(){//blink LEDs every three seconds
+	breatheInterval = setInterval(function(){//blink LEDs every three seconds
 		red.blink(1000, 3, BO.generators.Oscillator.BREATHERED);
 		green.blink(1000, 3, BO.generators.Oscillator.BREATHEGREEN);
 		blue.blink(1000, 3, BO.generators.Oscillator.BREATHEBLUE);
@@ -89,15 +92,45 @@ function onServoDone(){
 	feedingInitiated = false;
 }
 
+function onLightGateChange(event) {
+	//console.log("pin value = " + gate.value);
+}
+
 //change servo angle (0-180): servo.angle
 function feedUser(user){
-	console.log('feeding user '+user.from_user);
-	fed_users.push(user);
-	feedingInitiated = true;
+	if(gate.value == 1){//only feed the user if
+		console.log('feeding user '+user.from_user);
+		fed_users.push(user);
+		feedingInitiated = true;
+		servo.angle = 0;//initiate the feeding, push the cookie 
+		setTimeout(function(){$(servo).trigger('Servo.IN');}, 5000 );
+	}else{
+		console.log("cookie in the way");
+	}
+}
 
-	servo.angle = 0;//initiate the feeding, push the cookie 
+function denyUser(){
+	//stop blinking
+	red.stopBlinking();
+	green.stopBlinking();
+	blue.stopBlinking();
 
-	setTimeout(function(){$(servo).trigger('Servo.IN');}, 5000 );
+	//stop the breathing interval
+	clearInterval(breatheInterval);
+	breatheInterval = null;
+
+	//turn off irrelevant colors
+	green.off();
+	blue.off();
+	//blink red for 3000ms
+	red.blink(300, 10, BO.generators.Oscillator.TRIANGLE);
+
+	//start the blinking interval again
+	breatheInterval = setInterval(function(){//blink LEDs every three seconds
+		red.blink(1000, 3, BO.generators.Oscillator.BREATHERED);
+		green.blink(1000, 3, BO.generators.Oscillator.BREATHEGREEN);
+		blue.blink(1000, 3, BO.generators.Oscillator.BREATHEBLUE);
+    }, 3000);
 }
 /*BO.generators.Oscillator.BREATHE = function(val, lastVal) {
 	return ((-240*Math.abs(Math.sin(val)))+255)/255; //breathe wave

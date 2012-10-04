@@ -23,6 +23,7 @@ var log = function(){
 function checkForFedUsers(user){
     if(is_user_in_fed(user)){
         console.log(user.from_user+' has been fed already');
+        denyUser();
         return;
     }else{
         user.created_at = new Date();
@@ -41,6 +42,7 @@ function is_user_in_fed(user){
 
             if(minutesSince < 5){
                 console.log('we have already fed this person');
+                denyUser();
                 return true;
             }
         }
