@@ -41,7 +41,6 @@ $(document).ready(function() {
 });
 
 function onReady(event) {
-
 	// Remove the listener because it is no longer needed
 	arduino.removeEventListener(IOBoardEvent.READY, onReady);
 
@@ -63,11 +62,17 @@ function onReady(event) {
 
 	arduinoIsReady = true;
 
-	breatheInterval = setInterval(function(){//blink LEDs every three seconds
-		red.blink(1000, 3, BO.generators.Oscillator.BREATHERED);
-		green.blink(1000, 3, BO.generators.Oscillator.BREATHEGREEN);
-		blue.blink(1000, 3, BO.generators.Oscillator.BREATHEBLUE);
-    }, 3000);
+	makeBreatheInterval();//gotta run this once in a while. the clock is shit
+}
+
+function makeBreatheInterval(){
+	red.stopBlinking();
+	green.stopBlinking();
+	blue.stopBlinking();
+
+	red.blink(1000, 0, BO.generators.Oscillator.BREATHERED);
+	green.blink(1000, 0, BO.generators.Oscillator.BREATHEGREEN);
+	blue.blink(1000, 0, BO.generators.Oscillator.BREATHEBLUE);
 }
 
 function onServoIn(){
@@ -113,11 +118,7 @@ function denyUser(){
 	//stop blinking
 	red.stopBlinking();
 	green.stopBlinking();
-	blue.stopBlinking();
-
-	//stop the breathing interval
-	clearInterval(breatheInterval);
-	breatheInterval = null;
+	blue.stopBlinking();	
 
 	//turn off irrelevant colors
 	green.off();
@@ -125,12 +126,7 @@ function denyUser(){
 	//blink red for 3000ms
 	red.blink(300, 10, BO.generators.Oscillator.TRIANGLE);
 
-	//start the blinking interval again
-	breatheInterval = setInterval(function(){//blink LEDs every three seconds
-		red.blink(1000, 3, BO.generators.Oscillator.BREATHERED);
-		green.blink(1000, 3, BO.generators.Oscillator.BREATHEGREEN);
-		blue.blink(1000, 3, BO.generators.Oscillator.BREATHEBLUE);
-    }, 3000);
+	setTimeout(function(){makeBreatheInterval()},3500);	
 }
 /*BO.generators.Oscillator.BREATHE = function(val, lastVal) {
 	return ((-240*Math.abs(Math.sin(val)))+255)/255; //breathe wave
