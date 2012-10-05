@@ -99,6 +99,9 @@ function onServoDone(){
 
 function onLightGateChange(event) {
 	//console.log("pin value = " + gate.value);
+	if(gate.value==0){
+		makeBreatheInterval();
+	}
 }
 
 //change servo angle (0-180): servo.angle
