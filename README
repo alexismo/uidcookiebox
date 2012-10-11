@@ -1,0 +1,23 @@
+**UID Cookie Box**
+
+This box stands in the Umeå Institute of Design in Sweden and feeds cookies to all who tweet the correct hashtag.
+
+This project was originally a 2-day student sprint to make an object that talks
+with the Internet.
+Original node Twitter code from https://github.com/chovy/nodejs-stream.
+
+Feel free to use this code for any Twitter-triggered Arduino activity
+
+Here are some crude steps to get started:
+-Firmata Standard on your Arduino
+-Breakout.js(http://breakoutjs.com/) running
+-run app.js from node[node app.js]
+-visit localhost:8080 from your computer (or just visit the node server you launched)
+
+js/twitter.js manages data handling from the node server
+js/servo.js is where all the commands get sent to Breakout/Arduino
+
+Alexis Morin    @carignanboy
+Daniel Jansson  @threepercentdont
+Sharon Williams @shacawine
+worked on this project together.
