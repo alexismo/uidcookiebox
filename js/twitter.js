@@ -60,25 +60,32 @@ var stream = function(){
     source.addEventListener('twitter', function(e) {
         var data = JSON.parse(e.data),
                 htm = [];
-        htm.push( '<li class="twitter" style="display: none;">' );
-        htm.push( '<div class="profile">' );
-            htm.push( '<img src="'+data.user.profile_image_url+'" />' );
-            htm.push( '<a href="#">'+ data.user.screen_name + '</a>' );
-        htm.push( '</div>' );
-        htm.push( '<div class="text">'+data.text+'</div>' );
-        htm.push( '</li>' );
 
-        if(arduinoIsReady){
-            var user = {};
-            user.from_user = data.user.screen_name;
-            user.created_at = new Date(data.created_at);
+        //console.log(data.user);
 
-            checkForFedUsers(user);
+        if(data.user.name != null){
+            htm.push( '<li class="twitter" style="display: none;">' );
+            htm.push( '<div class="profile">' );
+                htm.push( '<img src="'+data.user.profile_image_url+'" />' );
+                htm.push( '<a href="#">'+ data.user.name + ', '+data.user.screen_name+'</a>' );
+            htm.push( '</div>' );
+            htm.push( '<div class="text">'+data.text+'</div>' );
+            htm.push( '</li>' );
+
+            if(arduinoIsReady){
+                var user = {};
+                user.from_user = data.user.screen_name;
+                user.created_at = new Date(data.created_at);
+
+                checkForFedUsers(user);
+            }
+
+            $("#results").prepend( htm.join("") );
+            $("#results li:first-child").fadeIn();
+            log.add(data);
+        }else{
+            console.log(data);
         }
-
-        $("#results").prepend( htm.join("") );
-        $("#results li:first-child").fadeIn();
-        log.add(data);
     }, false);
 
     source.addEventListener('keepalive', function(e){
